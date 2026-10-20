@@ -7,6 +7,19 @@ synergistic underwater image enhancement** (Information Fusion 117, 2025,
 Open [`FUGN_UIEB.ipynb`](FUGN_UIEB.ipynb) for the methodology, equations,
 implementation, training, evaluation, graphs, and all comparisons.
 
+### Hosted results
+
+[**View the results report**](https://recova.indiasouthcentral.cloudapp.azure.com/underwater-results/)
+
+The completed **10-epoch pilot** report includes all **150 input/output
+comparisons** and **six diagnostic plots**. It is hosted on the existing
+Azure `recova-vm` through Caddy with HTTPS and gzip compression. The initial
+download is about 91 MB because all photographs and plots are embedded.
+
+The HTML and its compressed copy persist in Caddy's data volume at
+`/data/research/fugn/index.html` and `index.html.gz`. The same standalone HTML
+can be downloaded from Modal and opened offline using the instructions below.
+
 ### Run the notebook
 
 Use Python 3.12 and a CUDA GPU (the full model has 31,183,007 parameters).
@@ -92,8 +105,8 @@ following on the 90 held-out paired photographs:
 | SSIM | 0.7737 | 0.8721 |
 
 PSNR improved on 74/90 images. All 3,600 optimizer updates succeeded without
-overflow skips. The complete private report is stored on the `underwater`
-volume at `/mnt/underwater/results/pilot/fugn_uieb_pilot.html`.
+overflow skips. The report is available at the hosted link above and on the
+`underwater` volume at `/mnt/underwater/results/pilot/fugn_uieb_pilot.html`.
 
 ### Fidelity and interpretation
 
