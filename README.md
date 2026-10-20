@@ -10,6 +10,8 @@ implementation, training, evaluation, graphs, and all comparisons.
 ### Run the notebook
 
 Use Python 3.12 and a CUDA GPU (the full model has 31,183,007 parameters).
+On Debian/Ubuntu, install `libarchive13` (`sudo apt-get install libarchive13`)
+to read the official RAR downloads; ZIP archives are supported too.
 
 ```bash
 python -m pip install -r requirements.txt

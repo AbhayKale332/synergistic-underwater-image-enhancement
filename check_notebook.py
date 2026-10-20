@@ -10,6 +10,7 @@ import argparse
 import json
 from pathlib import Path
 import tempfile
+import zipfile
 
 
 def load_definitions():
@@ -73,6 +74,22 @@ def main():
     scope["run_self_checks"]("cpu", full_model=True)
     with tempfile.TemporaryDirectory(prefix="fugn-test-only-") as temporary:
         root = Path(temporary)
+        archive_root = root / "archive-check"
+        archive_root.mkdir()
+        image_bytes = scope["io"].BytesIO()
+        Image.new("RGB", (12, 12), "teal").save(image_bytes, format="PNG")
+        with zipfile.ZipFile(archive_root / "raw.archive", "w") as archive:
+            archive.writestr("nested/first.png", image_bytes.getvalue())
+            archive.writestr("nested/second.png", image_bytes.getvalue())
+            archive.writestr("__MACOSX/._first.png", b"ignored metadata")
+        expected = scope["EXPECTED_COUNTS"]["raw"]
+        scope["EXPECTED_COUNTS"]["raw"] = 2
+        try:
+            scope["download_subset"](archive_root, "raw")
+            assert sorted(p.name for p in scope["image_files"](archive_root / "raw")) == ["first.png", "second.png"]
+            assert (archive_root / "raw" / ".complete.json").exists()
+        finally:
+            scope["EXPECTED_COUNTS"]["raw"] = expected
         records = []
         for index in range(4):
             path = root / f"TEST_ONLY_{index}.png"

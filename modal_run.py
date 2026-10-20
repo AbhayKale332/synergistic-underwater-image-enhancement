@@ -18,12 +18,12 @@ REPOSITORY = "https://github.com/AbhayKale332/synergistic-underwater-image-enhan
 MOUNT = "/mnt/underwater"
 app = modal.App("fugn-uieb-pilot")
 volume = modal.Volume.from_name("underwater")
-data_image = modal.Image.debian_slim(python_version="3.12").apt_install("git").pip_install(
-    "gdown>=5.2,<6", "Pillow>=10,<13", "nbformat>=5.10,<6"
+data_image = modal.Image.debian_slim(python_version="3.12").apt_install("git", "libarchive13").pip_install(
+    "gdown>=5.2,<6", "Pillow>=10,<13", "nbformat>=5.10,<6", "libarchive-c>=5.1,<6"
 )
 gpu_image = (
     modal.Image.debian_slim(python_version="3.12")
-    .apt_install("git", "libglib2.0-0")
+    .apt_install("git", "libglib2.0-0", "libarchive13")
     .pip_install_from_requirements("requirements.txt")
     .env({"MPLBACKEND": "Agg", "PYTHONUNBUFFERED": "1"})
 )
