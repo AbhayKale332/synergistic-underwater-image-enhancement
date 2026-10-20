@@ -1,7 +1,8 @@
 """Pull the public GitHub source and run FUGN on the existing underwater volume.
 
     modal run --env gpu --detach modal_run.py --commit <git-sha>
-    modal volume get --env gpu underwater results/pilot ./results/pilot
+    mkdir -p results
+    modal volume get --force --env gpu underwater results/pilot results
 
 Data preparation runs on CPU before the A10G is allocated. All notebook code
 comes from the requested public commit, rather than a copy of local changes.

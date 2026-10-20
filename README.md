@@ -55,7 +55,8 @@ modal run --env gpu --detach modal_run.py --commit FULL_40_CHARACTER_GIT_SHA
 Download the report and results after completion:
 
 ```bash
-modal volume get --env gpu underwater results/pilot ./results/pilot
+mkdir -p results
+modal volume get --force --env gpu underwater results/pilot results
 python check_notebook.py --artifacts results/pilot
 ```
 
@@ -81,6 +82,18 @@ archives, plus the challenging set). The split is **720 train / 80 validation /
 aligned random crops; evaluation resizes to 256×256. PSNR, SSIM and genuine
 phase-congruency FSIM are computed only for paired tests. Both sets receive
 UIQM and UCIQE scores, also measured on untreated input photographs.
+
+The completed 10-epoch pilot (source commit `24fcac7`, seed 42) measured the
+following on the 90 held-out paired photographs:
+
+| Metric | Untreated input | FUGN |
+| --- | ---: | ---: |
+| PSNR (dB) | 17.77 | 19.93 |
+| SSIM | 0.7737 | 0.8721 |
+
+PSNR improved on 74/90 images. All 3,600 optimizer updates succeeded without
+overflow skips. The complete private report is stored on the `underwater`
+volume at `/mnt/underwater/results/pilot/fugn_uieb_pilot.html`.
 
 ### Fidelity and interpretation
 
