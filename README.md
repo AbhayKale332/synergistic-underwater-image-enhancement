@@ -102,6 +102,9 @@ The loss follows the PDF's equal Charbonnier/SSIM weighting. The pilot uses
 the code's faster learning rate. Metric definitions and scaling conventions
 are stated in the notebook and report, especially for UIQM/UCIQE. No-reference
 scores can reward artifacts; inspect the comparisons as well as averages.
+CUDA uses mixed precision with automatic gradient scaling (initial scale 1024).
+Any overflow-skipped updates are recorded alongside successful optimizer updates
+in the history and report summary; non-finite losses still stop training.
 
 ### Checks
 
