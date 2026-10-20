@@ -70,6 +70,8 @@ def train(commit: str, epochs: int = 10, preset: str = "pilot", run_name: str = 
     import nbformat
     from nbclient import NotebookClient
     import torch
+    import shutil
+    import tempfile
 
     if not torch.cuda.is_available():
         raise RuntimeError("A CUDA GPU is required for the remote experiment.")
@@ -79,8 +81,18 @@ def train(commit: str, epochs: int = 10, preset: str = "pilot", run_name: str = 
     root = checkout(commit)
     output = Path(MOUNT) / "results" / run_name
     output.mkdir(parents=True, exist_ok=True)
+    # Large sequential archive reads avoid thousands of cold per-file volume
+    # fetches. The canonical data remains on the attached persistent volume.
+    persistent_data = Path(MOUNT) / "data" / "UIEB"
+    working_data = Path(tempfile.mkdtemp(prefix="fugn-uieb-"))
+    for subset in ("raw", "reference", "challenging"):
+        print(f"Staging {subset} archive to local scratch ...", flush=True)
+        shutil.copyfile(persistent_data / f"{subset}.archive", working_data / f"{subset}.archive")
+    for manifest in persistent_data.glob("split_seed_*.json"):
+        shutil.copyfile(manifest, working_data / manifest.name)
     os.environ.update({
-        "FUGN_DATA_DIR": f"{MOUNT}/data/UIEB", "FUGN_OUTPUT_DIR": str(output),
+        "FUGN_DATA_DIR": str(working_data), "FUGN_OUTPUT_DIR": str(output),
+        "FUGN_PERSISTENT_DATA_DIR": str(persistent_data),
         "FUGN_EPOCHS": str(epochs), "FUGN_PRESET": preset,
         "FUGN_RESUME": "1" if resume else "0", "FUGN_COMMIT": commit,
         "FUGN_REQUIRE_CUDA": "1",
@@ -89,10 +101,10 @@ def train(commit: str, epochs: int = 10, preset: str = "pilot", run_name: str = 
     notebook = nbformat.read(root / "FUGN_UIEB.ipynb", as_version=4)
     executed_path = output / "FUGN_UIEB_executed.ipynb"
 
-    def persist_cell(**kwargs):
+    async def persist_cell(**kwargs):
         nbformat.write(notebook, executed_path)
         # Checkpoints and results survive a disconnect or a failed later cell.
-        volume.commit()
+        await volume.commit.aio()
 
     client = NotebookClient(notebook, timeout=None, kernel_name="python3",
                             resources={"metadata": {"path": str(root)}},

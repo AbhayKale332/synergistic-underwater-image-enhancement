@@ -90,6 +90,34 @@ def main():
             assert (archive_root / "raw" / ".complete.json").exists()
         finally:
             scope["EXPECTED_COUNTS"]["raw"] = expected
+        # A cached manifest must avoid redundant decoding, while a changed
+        # image size must invalidate that cache before training can proceed.
+        cache_root = root / "validation-cache"
+        for subset, count in scope["EXPECTED_COUNTS"].items():
+            directory = cache_root / subset
+            directory.mkdir(parents=True)
+            for index in range(count):
+                (directory / f"{index:04d}.png").write_bytes(image_bytes.getvalue())
+            (directory / ".complete.json").write_text("{}")
+        cache_cfg = dict(scope["make_config"](), data_dir=str(cache_root))
+        prepared = scope["prepare_data"](cache_cfg)
+        assert [len(prepared[key]) for key in ("train", "val", "test", "challenging")] == [720, 80, 90, 60]
+        original_open = Image.open
+        def forbidden_decode(*args, **kwargs):
+            raise AssertionError("Unchanged validated files should not be decoded again")
+        Image.open = forbidden_decode
+        try:
+            scope["prepare_data"](cache_cfg)
+            with (cache_root / "raw" / "0000.png").open("ab") as image_file:
+                image_file.write(b"changed")
+            try:
+                scope["prepare_data"](cache_cfg)
+            except ValueError as error:
+                assert "manifest differs" in str(error)
+            else:
+                raise AssertionError("Changed dataset was accepted against an existing manifest")
+        finally:
+            Image.open = original_open
         records = []
         for index in range(4):
             path = root / f"TEST_ONLY_{index}.png"

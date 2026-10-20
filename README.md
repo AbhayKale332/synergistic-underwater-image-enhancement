@@ -40,6 +40,11 @@ It clones the public repository and checks out the specified immutable commit.
 The existing `underwater` volume is mounted at **`/mnt/underwater`**, with
 `data/UIEB`, `source/<commit>`, and `results/<run-name>` beneath it. Source comes
 from GitHub; datasets and output artifacts stay on the volume.
+For execution, archives are copied sequentially to temporary GPU-local scratch
+and extracted there, avoiding slow cold reads of thousands of individual files.
+The canonical data and all outputs remain on `/mnt/underwater`. A validated
+split manifest is reused when filenames and byte sizes are unchanged; set
+`FUGN_VERIFY_DATA=1` to force a fresh image-validation pass.
 
 Install the Modal CLI separately (`pip install modal`) and authenticate, then:
 
