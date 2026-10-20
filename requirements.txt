@@ -1,0 +1,12 @@
+torch==2.8.0
+torchvision==0.23.0
+numpy>=1.26,<3
+Pillow>=10,<13
+opencv-python-headless>=4.10,<5
+matplotlib>=3.9,<4
+pandas>=2.2,<3
+piq==0.8.0
+gdown>=5.2,<6
+nbformat>=5.10,<6
+nbclient>=0.10,<1
+ipykernel>=6.29,<8
