@@ -21,7 +21,9 @@ The HTML and its compressed copy persist in Caddy's data volume at
 can be downloaded from Modal and opened offline using the instructions below.
 
 [**View the method comparison**](https://recova.indiasouthcentral.cloudapp.azure.com/underwater-results/comparison/)
-(about 11 MB) is stored beside it at `/data/research/fugn/comparison/`.
+(about 12 MB) is stored beside it at `/data/research/fugn/comparison/`. It
+includes the improved ResNet-34 U-Net, which beats FUGN at the same 10-epoch
+budget (20.75 vs 19.93 dB PSNR); see [Improved model](#improved-model).
 
 ### Method comparison
 
@@ -39,19 +41,22 @@ its scores match the pilot exactly.
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | Untreated input | 17.77 | 0.7737 | 0.8924 | 0.5229 | 0.7094 | – |
 | Gray-World | 17.52 | 0.7721 | 0.8739 | 0.5187 | 0.7273 | 50/90 |
-| CLAHE | 18.02 | 0.8257 | 0.9400 | 0.5269 | **0.8803** | 56/90 |
+| CLAHE | 18.02 | 0.8257 | 0.9400 | 0.5269 | 0.8803 | 56/90 |
 | UDCP | 14.20 | 0.6921 | 0.9220 | 0.2789 | 0.8283 | 14/90 |
 | MSRCR | 15.25 | 0.7790 | 0.8913 | 0.3340 | 0.8262 | 37/90 |
 | Fusion | 18.35 | 0.8362 | 0.9191 | 0.5573 | 0.8477 | 56/90 |
 | UWCNN-style CNN | 19.73 | 0.8685 | 0.9445 | 0.6504 | 0.8705 | 72/90 |
 | U-Net | 18.88 | 0.8505 | 0.9412 | 0.6048 | 0.8575 | 63/90 |
-| **FUGN** | **19.93** | **0.8721** | **0.9476** | **0.6687** | 0.8771 | **74/90** |
+| FUGN | 19.93 | 0.8721 | 0.9476 | 0.6687 | 0.8771 | 74/90 |
+| **Ours: ResNet-34 U-Net** | **20.75** | **0.8966** | **0.9617** | **0.7170** | **0.9021** | **78/90** |
 
 Pixel accuracy is the share of pixels whose mean absolute RGB error from the
 reference is at most 0.1. Edge precision, recall and F1 compare Canny edges
-(50/150) of output and reference with 1-pixel tolerance. FUGN has the best
-PSNR, SSIM, FSIM, MSE (0.0149) and pixel accuracy; CLAHE has the best edge
-recall and F1 but the lowest edge precision among enhanced outputs.
+(50/150) of output and reference with 1-pixel tolerance. Our improved model
+(last row, described below) is best on every column except edge precision and
+UIQM/UCIQE. Among the original methods, FUGN has the best PSNR, SSIM, FSIM, MSE
+(0.0149) and pixel accuracy; CLAHE has the best edge recall and F1 but the
+lowest edge precision among enhanced outputs.
 UDCP and Gray-World have the highest UCIQE and UIQM even though their PSNR is
 below the input, which shows why no-reference scores need visual inspection.
 The U-Net produced red blotch artifacts on several photographs, most likely
@@ -69,6 +74,33 @@ method), `training_history.csv`, `summary.json`, baseline checkpoints,
 showcase PNGs and FUGN stage activations (`stages.json`) to
 `/mnt/underwater/results/comparison`. It reads the pilot's `best.pth`, so run
 the pilot first.
+
+### Improved model
+
+[`improve_fugn.py`](improve_fugn.py) trains six variants of a U-Net with an
+ImageNet-pretrained ResNet encoder, with and without FUGN's operator graph,
+under FUGN's split, loss, seed, 10-epoch budget and best-validation-PSNR rule.
+The final model is chosen on validation PSNR before test images are scored.
+The selected **ResNet-34 U-Net without a graph** (24,540,803 parameters) beats
+the FUGN pilot on the 90 paired test images:
+
+| Method | PSNR (dB) | SSIM | FSIM | MSE | Pixel accuracy | Edge F1 | PSNR wins vs input |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| FUGN (10 epochs) | 19.93 | 0.8721 | 0.9476 | 0.0149 | 0.6687 | 0.8771 | 74/90 |
+| **ResNet-34 U-Net (10 epochs)** | **20.75** | **0.8966** | **0.9617** | **0.0123** | **0.7170** | **0.9021** | **78/90** |
+
+The per-image PSNR gain over FUGN is 0.83 ± 0.15 dB (mean ± standard error);
+it wins on 66/90 images and is 2.6× faster. Adding FUGN's graph lowered test
+PSNR with ResNet-34 (20.28 dB) but raised it with ResNet-50 (20.69 vs 20.32),
+so the graph's benefit is not established at this budget. Each variant is a
+single seed-42 run. The paper's 26.52 dB (100 epochs, 10 runs) is not
+reached. The hosted comparison page shows all six variants, the per-image
+outputs and the validation curves.
+
+```bash
+modal run --env gpu --detach improve_fugn.py
+modal volume get --force --env gpu underwater results/improved results
+```
 
 ### Run the notebook
 
